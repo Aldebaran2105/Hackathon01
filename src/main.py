@@ -1,4 +1,9 @@
 import re
+import sys
+import os
+
+# Asegura que se pueda importar este archivo desde tests
+sys.path.append(os.path.dirname(os.path.abspath(_file_)))
 
 def calculate(expression: str) -> float:
     expression = expression.strip()
