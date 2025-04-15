@@ -1,17 +1,6 @@
 import unittest
 
-#from ..src.main import calculate Este se queda
-#from src.main import calculate
-
-import sys
-import os
-
-# Agrega el path del directorio 'src' al sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
-
-from main import calculate
-
-
+from ..src.main import calculate Este se queda
 
 class TestCalculator(unittest.TestCase):
     def test_sum_simple(self):
