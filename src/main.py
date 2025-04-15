@@ -68,4 +68,4 @@ def calculate(expression: str) -> float:
 
     tokens = parse_tokens(expression)
     rpn = to_rpn(tokens)
-    return eval_rpn(rpn)
+    return eval_rpn(rpn)
