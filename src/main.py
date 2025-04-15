@@ -1,27 +1,20 @@
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
-from main import calculate
-
-
 def calculate(expression: str) -> float:
-    if not expression or expression.strip() == "":
-        raise ValueError("La expresión no puede estar vacía")
-
     expression = expression.strip()
 
-    # Validar caracteres permitidos
-    for char in expression:
-        if not (char.isdigit() or char.isspace() or char in "+-*/()."):
-            raise ValueError(f"Carácter inválido encontrado: '{char}'")
-        
+    if not expression:
+        raise ValueError("La expresión no puede estar vacía")
+
+    allowed_chars = set("0123456789+-*/(). ")
+
+    if not all(char in allowed_chars for char in expression):
+        raise ValueError("Carácter inválido en la expresión")
+
     try:
-        # Evalúa la expresión matemáticamente
-        resultado = eval(expression, {"_builtins_": None}, {})
-        return resultado
+        result = eval(expression, {"__builtins__": None}, {})
+        return result
     except ZeroDivisionError:
-            raise ZeroDivisionError("División por cero")
+        raise ZeroDivisionError("División por cero")
     except SyntaxError:
-            raise SyntaxError("Sintaxis inválida")
+        raise SyntaxError("Sintaxis inválida")
     except Exception:
-            raise ValueError("Error desconocido")
+        raise ValueError("Error desconocido")
