@@ -1,99 +1,51 @@
-import re
-import sys
-import os
+# main.py
 
-# Asegura que se pueda importar este archivo desde tests
-sys.path.append(os.path.dirname(os.path.abspath(_file_)))
+def suma(a: float, b: float) -> float:
+    return a + b
 
-def calculate(expression: str) -> float:
-    expression = expression.strip()
-    if not expression:
-        raise ValueError("La expresión no puede estar vacía")
+def resta(a: float, b: float) -> float:
+    return a - b
 
-    allowed_chars = set("0123456789+-*/(). ")
-    if not all(char in allowed_chars for char in expression):
-        raise ValueError("Carácter inválido en la expresión")
+def multiplicacion(a: float, b: float) -> float:
+    return a * b
 
-    try:
-        tokens = tokenize(expression)
-        rpn = to_rpn(tokens)
-        return evaluate_rpn(rpn)
-    except ZeroDivisionError:
-        raise ZeroDivisionError("División por cero")
-    except SyntaxError:
-        raise SyntaxError("Sintaxis inválida")
-    except Exception:
-        raise ValueError("Error desconocido")
+def division(a: float, b: float) -> float:
+    if b == 0:
+        raise ZeroDivisionError("No se puede dividir entre cero.")
+    return a / b
 
-def tokenize(expression: str):
-    token_pattern = r'\d+\.\d+|\d+|[+\-*/()]'
-    tokens = re.findall(token_pattern, expression.replace(' ', ''))
+def calculate() -> float:
+    while True:
+        entrada = input("Ingresa una operación (o 'c' para limpiar): ").strip()
 
-    # Manejar números negativos (unarios)
-    processed = []
-    prev = None
-    for token in tokens:
-        if token == '-' and (prev is None or prev in "+-*/("):
-            processed.append('0')  # Ej: -5 -> 0 - 5
-        processed.append(token)
-        prev = token
-    return processed
+        if entrada.lower() == 'c':
+            print("Operación borrada.")
+            continue
 
-def to_rpn(tokens):
-    precedence = {'+': 1, '-': 1, '*': 2, '/': 2}
-    output = []
-    stack = []
+        # Intentamos parsear operaciones del tipo: número operador número
+        try:
+            partes = entrada.split()
 
-    for token in tokens:
-        if is_number(token):
-            output.append(token)
-        elif token in precedence:
-            while (stack and stack[-1] in precedence and
-                   precedence[stack[-1]] >= precedence[token]):
-                output.append(stack.pop())
-            stack.append(token)
-        elif token == '(':
-            stack.append(token)
-        elif token == ')':
-            while stack and stack[-1] != '(':
-                output.append(stack.pop())
-            if not stack:
-                raise SyntaxError("Paréntesis no balanceados")
-            stack.pop()
-        else:
-            raise ValueError("Token inválido")
+            if len(partes) != 3:
+                raise ValueError("Formato inválido. Usa: número operador número (ej. 2 + 2)")
 
-    while stack:
-        if stack[-1] in "()":
-            raise SyntaxError("Paréntesis no balanceados")
-        output.append(stack.pop())
+            a, op, b = partes
+            a = float(a)
+            b = float(b)
 
-    return output
+            if op == '+':
+                resultado = suma(a, b)
+            elif op == '-':
+                resultado = resta(a, b)
+            elif op == '*':
+                resultado = multiplicacion(a, b)
+            elif op == '/':
+                resultado = division(a, b)
+            else:
+                raise ValueError(f"Operador no válido: {op}")
 
-def evaluate_rpn(tokens):
-    stack = []
-    for token in tokens:
-        if is_number(token):
-            stack.append(float(token))
-        else:
-            if len(stack) < 2:
-                raise SyntaxError("Faltan operandos")
-            b = stack.pop()
-            a = stack.pop()
-            if token == '+': stack.append(a + b)
-            elif token == '-': stack.append(a - b)
-            elif token == '*': stack.append(a * b)
-            elif token == '/':
-                if b == 0:
-                    raise ZeroDivisionError
-                stack.append(a / b)
-    if len(stack) != 1:
-        raise SyntaxError("Expresión malformada")
-    return stack[0]
+            print(f"Resultado: {resultado}")
+            return resultado
 
-def is_number(token: str) -> bool:
-    try:
-        float(token)
-        return True
-    except ValueError:
-        return False
+        except Exception as e:
+            print(f"Error: {e}")
