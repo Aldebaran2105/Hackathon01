@@ -1,4 +1,8 @@
-from src.main import calculate
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+from main import calculate
+
 
 def calculate(expression: str) -> float:
     if not expression or expression.strip() == "":
