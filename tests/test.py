@@ -1,6 +1,6 @@
 import unittest
 
-from ..src.main import calculate Este se queda
+from ..src.main import calculate
 
 class TestCalculator(unittest.TestCase):
     def test_sum_simple(self):
