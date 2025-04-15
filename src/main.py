@@ -1,51 +1,70 @@
-# main.py
+   import re
+    import operator
 
-def suma(a: float, b: float) -> float:
-    return a + b
+    # Definir precedencia y operadores válidos
+    ops = {
+        '+': (1, operator.add),
+        '-': (1, operator.sub),
+        '*': (2, operator.mul),
+        '/': (2, operator.truediv)
+    }
 
-def resta(a: float, b: float) -> float:
-    return a - b
+    def parse_tokens(expr):
+        token_pattern = re.compile(r"\d+\.\d+|\d+|[-+*/()]")
+        return token_pattern.findall(expr)
 
-def multiplicacion(a: float, b: float) -> float:
-    return a * b
-
-def division(a: float, b: float) -> float:
-    if b == 0:
-        raise ZeroDivisionError("No se puede dividir entre cero.")
-    return a / b
-
-def calculate() -> float:
-    while True:
-        entrada = input("Ingresa una operación (o 'c' para limpiar): ").strip()
-
-        if entrada.lower() == 'c':
-            print("Operación borrada.")
-            continue
-
-        # Intentamos parsear operaciones del tipo: número operador número
-        try:
-            partes = entrada.split()
-
-            if len(partes) != 3:
-                raise ValueError("Formato inválido. Usa: número operador número (ej. 2 + 2)")
-
-            a, op, b = partes
-            a = float(a)
-            b = float(b)
-
-            if op == '+':
-                resultado = suma(a, b)
-            elif op == '-':
-                resultado = resta(a, b)
-            elif op == '*':
-                resultado = multiplicacion(a, b)
-            elif op == '/':
-                resultado = division(a, b)
+    def to_rpn(tokens):
+        output = []
+        stack = []
+        for token in tokens:
+            if re.fullmatch(r"\d+\.\d+|\d+", token):
+                output.append(float(token))
+            elif token in ops:
+                while stack and stack[-1] in ops and ops[token][0] <= ops[stack[-1]][0]:
+                    output.append(stack.pop())
+                stack.append(token)
+            elif token == '(':
+                stack.append(token)
+            elif token == ')':
+                while stack and stack[-1] != '(':
+                    output.append(stack.pop())
+                if not stack or stack[-1] != '(':
+                    raise SyntaxError("Paréntesis desbalanceados")
+                stack.pop()
             else:
-                raise ValueError(f"Operador no válido: {op}")
+                raise ValueError("Carácter inválido en la expresión")
+        while stack:
+            if stack[-1] in '()':
+                raise SyntaxError("Paréntesis desbalanceados")
+            output.append(stack.pop())
+        return output
 
-            print(f"Resultado: {resultado}")
-            return resultado
+    def eval_rpn(rpn):
+        stack = []
+        for token in rpn:
+            if isinstance(token, float):
+                stack.append(token)
+            else:
+                if len(stack) < 2:
+                    raise SyntaxError("Sintaxis inválida")
+                b = stack.pop()
+                a = stack.pop()
+                try:
+                    stack.append(ops[token][1](a, b))
+                except ZeroDivisionError:
+                    raise ZeroDivisionError("División por cero")
+        if len(stack) != 1:
+            raise SyntaxError("Sintaxis inválida")
+        return stack[0]
 
-        except Exception as e:
-            print(f"Error: {e}")
+    expression = expression.strip()
+    if not expression:
+        raise ValueError("La expresión no puede estar vacía")
+
+    allowed_chars = set("0123456789+-*/(). ")
+    if not all(char in allowed_chars for char in expression):
+        raise ValueError("Carácter inválido en la expresión")
+
+    tokens = parse_tokens(expression)
+    rpn = to_rpn(tokens)
+    return eval_rpn(rpn)
