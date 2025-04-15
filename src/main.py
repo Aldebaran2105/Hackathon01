@@ -11,14 +11,15 @@ OPERATORS = {
     ast.USub: operator.neg,
 }
 
+
 def calculate(expression: str) -> float:
     expression = expression.strip()
 
     if not expression:
         raise ValueError("La expresión no puede estar vacía")
 
-    allowed_chars = set("0123456789+-*/(). ")
-    if not all(char in allowed_chars for char in expression):
+    # Validar caracteres permitidos
+    if not all(char in "0123456789+-*/(). " for char in expression):
         raise ValueError("Carácter inválido en la expresión")
 
     try:
@@ -28,35 +29,31 @@ def calculate(expression: str) -> float:
         raise ZeroDivisionError("División por cero")
     except SyntaxError:
         raise SyntaxError("Sintaxis inválida")
-    except Exception:
-        raise ValueError("Expresión inválida o no soportada")
+    except Exception as e:
+        raise ValueError(f"Expresión inválida o no soportada: {e}")
+
 
 def _evaluate(node):
     if isinstance(node, ast.BinOp):
         left = _evaluate(node.left)
         right = _evaluate(node.right)
         op_type = type(node.op)
-        if op_type in OPERATORS:
-            return OPERATORS[op_type](left, right)
-        else:
+        if op_type not in OPERATORS:
             raise ValueError("Operador no permitido")
+        return OPERATORS[op_type](left, right)
 
     elif isinstance(node, ast.UnaryOp):
         operand = _evaluate(node.operand)
         op_type = type(node.op)
-        if op_type in OPERATORS:
-            return OPERATORS[op_type](operand)
-        else:
+        if op_type not in OPERATORS:
             raise ValueError("Operador unario no permitido")
+        return OPERATORS[op_type](operand)
 
-    elif isinstance(node, ast.Num):  # Python < 3.8
-        return node.n
-
-    elif isinstance(node, ast.Constant):  # Python >= 3.8
-        if isinstance(node.value, (int, float)):
-            return node.value
+    elif isinstance(node, (ast.Num, ast.Constant)):  # Soporte para 3.11 y 3.12
+        value = getattr(node, 'n', getattr(node, 'value', None))
+        if isinstance(value, (int, float)):
+            return value
         else:
             raise ValueError("Constante inválida")
 
-    else:
-        raise ValueError("Expresión no soportada")
+    raise ValueError("Expresión no soportada")
