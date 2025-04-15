@@ -1,4 +1,5 @@
-   import re
+def calculate(expression: str) -> float:
+    import re
     import operator
 
     # Definir precedencia y operadores válidos
