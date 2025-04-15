@@ -1,77 +1,61 @@
-class ExpressionEvaluator:
-    def __init__(self, expression: str):
-        self.expression = expression.replace(" ", "")
-        self.index = 0
+import ast
+import operator
 
-    def parse(self):
-        if not self.expression:
-            raise ValueError("La expresión no puede estar vacía")
-        value = self._parse_expression()
-        if self.index < len(self.expression):
-            raise SyntaxError("Caracteres restantes no válidos")
-        return value
-
-    def _parse_expression(self):
-        values = [self._parse_term()]
-        while self._current() in '+-':
-            op = self._consume()
-            right = self._parse_term()
-            if op == '+':
-                values.append(right)
-            elif op == '-':
-                values.append(-right)
-        return sum(values)
-
-    def _parse_term(self):
-        values = [self._parse_factor()]
-        while self._current() in '*/':
-            op = self._consume()
-            right = self._parse_factor()
-            if op == '*':
-                values[-1] *= right
-            elif op == '/':
-                if right == 0:
-                    raise ZeroDivisionError("División por cero")
-                values[-1] /= right
-        return values[-1]
-
-    def _parse_factor(self):
-        char = self._current()
-        if char == '(':
-            self._consume()  # consume '('
-            value = self._parse_expression()
-            if self._consume() != ')':
-                raise SyntaxError("Falta el paréntesis de cierre")
-            return value
-        elif char in '+-':
-            op = self._consume()
-            factor = self._parse_factor()
-            return factor if op == '+' else -factor
-        else:
-            return self._parse_number()
-
-    def _parse_number(self):
-        start = self.index
-        while self._current() and self._current().isdigit() or self._current() == '.':
-            self.index += 1
-        try:
-            return float(self.expression[start:self.index])
-        except ValueError:
-            raise SyntaxError("Número inválido")
-
-    def _current(self):
-        return self.expression[self.index] if self.index < len(self.expression) else None
-
-    def _consume(self):
-        char = self._current()
-        self.index += 1
-        return char
-
+OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.UAdd: operator.pos,
+    ast.USub: operator.neg,
+}
 
 def calculate(expression: str) -> float:
-    # Validar caracteres
+    if not expression or expression.strip() == "":
+        raise ValueError("La expresión no puede estar vacía")
+
+    expression = expression.strip()
+
     allowed_chars = set("0123456789+-*/(). ")
-    if not expression or not all(char in allowed_chars for char in expression):
-        raise ValueError("Expresión vacía o contiene caracteres inválidos")
-    evaluator = ExpressionEvaluator(expression)
-    return evaluator.parse()
+    if not all(char in allowed_chars for char in expression):
+        raise ValueError("Carácter inválido en la expresión")
+
+    try:
+        tree = ast.parse(expression, mode='eval')
+        return _evaluate(tree.body)
+    except ZeroDivisionError:
+        raise ZeroDivisionError("División por cero")
+    except SyntaxError:
+        raise SyntaxError("Sintaxis inválida")
+    except Exception:
+        raise ValueError("Expresión inválida o no soportada")
+
+def _evaluate(node):
+    if isinstance(node, ast.BinOp):
+        left = _evaluate(node.left)
+        right = _evaluate(node.right)
+        op_type = type(node.op)
+        if op_type in OPERATORS:
+            return OPERATORS[op_type](left, right)
+        else:
+            raise ValueError("Operador no permitido")
+
+    elif isinstance(node, ast.UnaryOp):
+        operand = _evaluate(node.operand)
+        op_type = type(node.op)
+        if op_type in OPERATORS:
+            return OPERATORS[op_type](operand)
+        else:
+            raise ValueError("Operador unario no permitido")
+
+    elif isinstance(node, ast.Constant):  # Compatible con Python 3.8+
+        if isinstance(node.value, (int, float)):
+            return node.value
+        else:
+            raise ValueError("Constante inválida")
+
+    elif isinstance(node, ast.Num):  # Retrocompatibilidad con < 3.8
+        return node.n
+
+    else:
+        raise ValueError("Expresión no soportada")
